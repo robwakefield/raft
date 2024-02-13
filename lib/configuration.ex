@@ -70,7 +70,7 @@ end # params :default
 # add further params functions for your own tests and experiments
 
 # _________________________________________________________ params :testing_XX
-def params :testing_XX do             
+def params :testing_XX do
   Map.merge (params :default),
   %{
     # omitted
