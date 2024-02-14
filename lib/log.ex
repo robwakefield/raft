@@ -12,7 +12,6 @@ def new(server, log)          do Map.put(server, :log, log) end     # only used 
 
 def last_index(server)        do map_size(server.log) end
 def entry_at(server, index)   do server.log[index] end
-def last_entry(server)        do "S#{inspect(server.server_num)}: " <> Log.entry_at(server, Log.last_index(server)) end
 def request_at(server, index) do server.log[index].request end
 def term_at(_server, 0)       do 0 end
 def term_at(server, index)    do server.log[index].term end
@@ -28,14 +27,6 @@ def get_entries_from(server, from) do               # e.g return server.log[3..]
   for k <- from .. Log.last_index(server) // 1, into: Map.new do
     {k, Log.entry_at(server, k)}
   end
-end
-
-def append_msg(server, msg) do
-  append_entry(server, "<- " <> msg)
-end
-
-def append_election(server, msg) do
-  append_entry(server, "ELEC " <> msg)
 end
 
 def append_entry(server, entry) do

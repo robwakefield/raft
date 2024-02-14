@@ -1,79 +1,91 @@
-
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2
 
 defmodule Server do
-
-# _________________________________________________________ Server.start()
-def start(config, server_num) do
-
-  config = config
-    |> Configuration.node_info("Server", server_num)
-    |> Debug.node_starting()
-
-  receive do
-    { :BIND, servers, databaseP } ->
-      IO.puts("Started #{config.node_name}")
+  # _________________________________________________________ Server.start()
+  def start(config, server_num) do
+    config =
       config
-      |> State.initialise(server_num, servers, databaseP)
-      |> Timer.restart_election_timer()
-      |> Server.next()
-  end # receive
-end # start
+      |> Configuration.node_info("Server", server_num)
+      |> Debug.node_starting()
 
-# _________________________________________________________ next()
-def next(server) do
+    receive do
+      {:BIND, servers, databaseP} ->
+        config
+        |> State.initialise(server_num, servers, databaseP)
+        |> Timer.restart_election_timer()
+        |> Server.next()
+    end
 
-  # invokes functions in AppendEntries, Vote, ServerLib etc
+    # receive
+  end
 
-  server = receive do
+  # start
 
-    { :APPEND_ENTRIES_REQUEST, %{term: term, msg: msg, followerP: sender}} ->
-      # (b) another server has become a leader, we need to follow
-      IO.puts("S#{server.server_num} received: #{msg} from #{inspect(sender)}")
-      server
-      |> Log.append_msg(":APPEND_ENTRIES_REQUEST, #{inspect(sender)} #{msg}")
-      |> Vote.accept_leader(term, sender)
+  # _________________________________________________________ next()
+  def next(server) do
+    # invokes functions in AppendEntries, Vote, ServerLib etc
 
-  # { :APPEND_ENTRIES_REPLY, ...
+    server =
+      receive do
+        {:APPEND_ENTRIES_REQUEST,
+         %{
+           term: term,
+           leaderId: leaderId,
+           prevLogIndex: prevLogIndex,
+           prevLogTerm: prevLogTerm,
+           entries: entries,
+           leaderCommit: leaderCommit,
+           sender: sender
+         }} ->
+          # { :APPEND_ENTRIES_REQUEST, body } ->
+          server
+          |> Debug.received(":APPEND_ENTRIES_REQUEST, #{inspect(sender)}")
+          |> Vote.accept_leader(term, sender, leaderId, leaderCommit, prevLogTerm, prevLogIndex)
 
-    { :APPEND_ENTRIES_TIMEOUT, %{term: _term, followerP: sender} } ->
-      server
-      |> Log.append_msg(":APPEND_ENTRIES_TIMEOUT, #{inspect(sender)}")
-      |> Vote.rpc_timeout(sender)
+        {:APPEND_ENTRIES_REPLY, term, msg} ->
+          IO.puts("APPEND_ENTRIES #{inspect(msg)}")
+          server
 
-    { :VOTE_REQUEST, term, sender, lastLogIndex, lastLogTerm } ->
-      server
-      |> Log.append_msg(":VOTE_REQUEST, #{term}, #{inspect(sender)}, #{"lastLogIndex"}, #{"lastLogTerm"}")
-      |> Vote.vote_req(term, sender, lastLogIndex, lastLogTerm)
+        {:APPEND_ENTRIES_TIMEOUT, %{term: _term, followerP: sender}} ->
+          server
+          |> Debug.received(":APPEND_ENTRIES_TIMEOUT, #{inspect(sender)}")
+          |> Vote.rpc_timeout(sender)
 
-    { :VOTE_REPLY, term, sender, vote } ->
-      server
-      |> Log.append_msg(":VOTE_REPLY #{term} #{inspect(sender)} #{inspect(vote)}")
-      |> Vote.vote_rep(term, sender, vote)
+        {:VOTE_REQUEST, term, sender, lastLogIndex, lastLogTerm} ->
+          server
+          |> Debug.received(
+            ":VOTE_REQUEST, #{term}, #{inspect(sender)}, #{"lastLogIndex"}, #{"lastLogTerm"}"
+          )
+          |> Vote.vote_req(term, sender, lastLogIndex, lastLogTerm)
 
-    { :ELECTION_TIMEOUT, %{term: _, election: _} } ->
-      server
-       |> Log.append_msg(":ELECTION TIMEOUT")
-       |> Vote.election_timeout()
+        {:VOTE_REPLY, term, sender, vote} ->
+          server
+          |> Debug.received(":VOTE_REPLY #{term} #{inspect(sender)} #{inspect(vote)}")
+          |> Vote.vote_rep(term, sender, vote)
 
-    { :CLIENT_REQUEST, _} ->
-      #IO.puts(":CLIENT_REQUEST")
-      server
+        {:ELECTION_TIMEOUT, %{term: _, election: _}} ->
+          server
+          |> Debug.received(":ELECTION TIMEOUT")
+          |> Vote.election_timeout()
 
-   unexpected ->
-      Helper.node_halt("***** Server: unexpected message #{inspect unexpected}")
+        {:CLIENT_REQUEST, %{cmd: cmd, clientP: clientP, cid: cid} = body} ->
+          server
+          |> Debug.received(":CLIENT_REQUEST")
 
-  end # receive
+        unexpected ->
+          Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")
+      end
 
-  IO.puts(if map_size(server.log) > 0 do Log.last_entry(server) end)
-  # if map_size(server.log) < 10 do
-  #   server |> Server.next()
-  # end
-  server |> Server.next()
+    # receive
 
+    # if map_size(server.log) < 10 do
+    #   server |> Server.next()
+    # end
+    server |> Server.next()
+  end
 
+  # next
+end
 
-end # next
-
-end # Server
+# Server

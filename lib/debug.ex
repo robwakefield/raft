@@ -13,7 +13,7 @@ def rpad(role)     do String.pad_trailing("#{role}", 9) end
 def tpad(term)     do String.pad_leading("#{term}", 3, "0") end
 def map(m)         do (for {k, v} <- m, into: "" do "\n\t#{kpad(k)}\t#{inspect v}" end) end
 
-def option?(config, option, level) do 
+def option?(config, option, level) do
   String.contains?(config.debug_options, option) and config.debug_level >= level
 end
 
@@ -21,15 +21,15 @@ def mapstr(config, mapname, mapvalue, level) do
   (if Debug.option?(config, "a", level) do "#{mapname} = #{map(mapvalue)}" else "" end)
 end
 
-def node_prefix(config) do 
-  "#{config.node_name}@#{config.node_location}" 
+def node_prefix(config) do
+  "#{config.node_name}@#{config.node_location}"
 end
 
-def server_prefix(server) do 
+def server_prefix(server) do
   "server#{server.server_num}-#{lpad(server.config.line_num)} role=#{rpad(server.role)} term=#{tpad(server.curr_term)}"
 end
 
-def inc_line_num(server) do 
+def inc_line_num(server) do
   Map.put(server, :config, Map.put(server.config, :line_num, server.config.line_num+1))
 end
 
@@ -52,7 +52,7 @@ def sent(server, message, level \\ 1) do
   server |> Debug.message("!snd",  message, level)
 end # sent
 
-# _________________________________________________________ Debug.received()
+# _________________________________________________________ Debug.info()
 def info(server, message, level \\ 1) do
   server |> Debug.message("!inf", message, level)
 end # received

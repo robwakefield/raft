@@ -27,8 +27,6 @@ end # start
 # _________________________________________________________ Monitor next()
 def next(monitor) do
   receive do
-  _ ->
-    :nothing
   { :DB_MOVE, db, seqnum, command } ->
 
     { :MOVE, amount, from, to } = command
@@ -84,8 +82,7 @@ def next(monitor) do
     # end
 
     IO.puts ""
-    # TODO: Add next line back in
-    #Process.send_after(self(), { :PRINT }, monitor.config.monitor_interval)
+    Process.send_after(self(), { :PRINT }, monitor.config.monitor_interval)
     monitor |> Monitor.next()
 
   # ** ADD ADDITIONAL MESSAGES HERE

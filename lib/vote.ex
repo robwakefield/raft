@@ -4,12 +4,11 @@
 
 defmodule Vote do
 
-def accept_leader(server, term, q) do
+def accept_leader(server, term, q, leaderId, leaderCommit, prevLogTerm, prevLogIndex) do
   server = if term > server.curr_term do
     # Accept that we are not a leader
     stepdown(server, term)
-    |> State.leaderP(q)
-    |> Log.append_election("Accepting leader #{inspect(q)}")
+    |> State.leaderP(leaderId)
   else
     server
   end
@@ -17,13 +16,56 @@ def accept_leader(server, term, q) do
   if term < server.curr_term do
     send q, { :APPEND_ENTRIES_REPLY, server.curr_term, false}
   end
+  server = if term == server.curr_term do
+    server |> State.leaderP(leaderId)
+  else
+    server
+  end
+  # Log does not contain the previous entry
+  # server = if Log.last_index(server) < prevLogIndex do
+  #   send q, { :APPEND_ENTRIES_REPLY, server.curr_term, false }
+  #   server
+  # else
+  #   # Conflicting entries
+  #   server = unless Log.entry_at(server, prevLogIndex) == prevLogTerm do
+  #     send q, { :APPEND_ENTRIES_REPLY, server.curr_term, false }
+  #     server |> Log.delete_entries_from(prevLogIndex)
+  #   else
+  #     server
+  #   end
+  #   server
+  # end
+  # Append new entries
+
+  # if leaderCommit > server.commit_index do
+  #   server
+  #   |> State.commit_index(min(leaderCommit, Log.last_index(server)))
+  # end
+
+  # Send dummy heartbeat
+  server = if server.role == :LEADER do
+    # TODO: send dummy heartbeat by sending a RPC timeout using Timer
+    server |> send_heartbeat()
+  else
+    server
+  end
+  server = if q == server.leaderP and server.leaderP != nil do
+    server
+    |> Debug.message("?w", "Restarting election timer")
+    |> Timer.restart_election_timer()
+  else
+    server
+  end
   server
+  |> Debug.message("?w", "Restarting RPC timer")
+  |> Timer.restart_append_entries_timer(q)
 end
 
 def election_timeout(server) do
   if server.role == :FOLLOWER or server.role == :CANDIDATE do
     # Start an election ((c) a period of times goes by without winner)
     server = server
+    |> Debug.info("Starting an election!")
     |> Timer.restart_election_timer()
     |> State.inc_term()
     |> State.role(:CANDIDATE)
@@ -40,7 +82,6 @@ def election_timeout(server) do
   else
     # We are already leader, no need for another election
     server
-    |> Timer.restart_election_timer() # TODO: Need to reset timer? or can I ignore election timers as I am leader?
   end
 end
 
@@ -50,7 +91,13 @@ def rpc_timeout(server, q) do
     server
     |> Timer.restart_append_entries_timer(q)
   else
-    server
+    if server.role == :LEADER do
+      server
+      |> Timer.restart_append_entries_timer(server.selfP)
+      |> send_heartbeat()
+    else
+      server
+    end
   end
 end
 
@@ -86,16 +133,11 @@ def vote_rep(server, term, q, vote) do
     server = server |> Timer.cancel_append_entries_timer(q)
     if State.vote_tally(server) > server.majority do
       # (a) We win the election and become leader
-      IO.puts("***************************\n\n   NEW LEADER - #{server.config.node_name}\n\n***************************")
-      server = server
+      server
       |> State.role(:LEADER)
       |> State.leaderP(server.selfP)
-      # Notify all other servers we are the leader now
-      Enum.each(server.servers -- [server.selfP],
-      fn s ->
-        send s, { :APPEND_ENTRIES_REQUEST, %{term: server.curr_term, msg: :I_AM_LEADER, followerP: server.selfP}}
-      end)
-      server
+      |> Debug.info("NEW LEADER - #{server.config.node_name}")
+      |> send_heartbeat()
     else
       server
     end
@@ -110,6 +152,22 @@ defp stepdown(server, term) do
   |> State.role(:FOLLOWER)
   |> State.voted_for(nil)
   |> Timer.restart_election_timer()
-  |> Log.append_election("Stepping down (term #{term})")
 end
+
+defp send_heartbeat(server) do
+  Enum.each(server.servers -- [server.selfP],
+  fn s ->
+    send s, { :APPEND_ENTRIES_REQUEST, %{
+      term: server.curr_term,
+      leaderId: server.selfP,
+      prevLogIndex: 0,
+      prevLogTerm: 0,
+      entries: [],
+      leaderCommit: 0,
+      sender: server.selfP } }
+  end)
+  Process.send_after(self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: server.selfP} }, 5)
+  server
+end
+
 end # Vote
