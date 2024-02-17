@@ -28,14 +28,12 @@ defmodule Server do
     server =
       receive do
         {:APPEND_ENTRIES_REQUEST, body} ->
-          server
-          |> Debug.received(":APPEND_ENTRIES_REQUEST, #{inspect(body)}")
+        server
           |> AppendEntries.request(body)
 
-        {:APPEND_ENTRIES_REPLY, term, msg} ->
+        {:APPEND_ENTRIES_REPLY, term, success, index, sender} ->
           server
-          |> Debug.received(":APPEND_ENTRIES_REQUEST, t:#{inspect(term)} #{inspect(msg)}")
-          |> AppendEntries.reply(term, msg)
+          |> AppendEntries.reply(sender, term, success, index)
 
         {:APPEND_ENTRIES_TIMEOUT, %{term: term, followerP: sender}} ->
           server
@@ -59,8 +57,14 @@ defmodule Server do
 
         {:CLIENT_REQUEST, body} ->
           server
+          |> Monitor.send_msg({ :CLIENT_REQUEST, server.server_num })
           |> Debug.received(":CLIENT_REQUEST #{inspect(body)}")
           |> ClientRequest.handle_request(body)
+
+        { :DB_REPLY, db_result } ->
+          server
+          |> Debug.received(":DB_REPLY #{inspect(db_result)}")
+          |> ClientRequest.reply(server.last_applied, db_result)
 
         unexpected ->
           Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")

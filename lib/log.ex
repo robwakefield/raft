@@ -7,8 +7,15 @@ defmodule Log do
 # implemented as a Map indexed from 1.
 
 def new()                     do Map.new() end                      # used when process state is initialised
-def new(server)               do Map.put(server, :log, Map.new) end # not currently used
-def new(server, log)          do Map.put(server, :log, log) end     # only used below
+def new(server) do # not currently used
+  server = server
+  |> Map.put(:log, Map.new)
+  Debug.message(server, "-log", "Reset Log: #{inspect(Log.get_entries_from(server, 1))}")
+end
+def new(server, log) do # only used below
+  server
+  |> Map.put(:log, log)
+end
 
 def last_index(server)        do map_size(server.log) end
 def entry_at(server, index)   do server.log[index] end
@@ -29,20 +36,32 @@ def get_entries_from(server, from) do               # e.g return server.log[3..]
   end
 end
 
-def append_entry(server, entry) do
-  Log.new(server, Map.put(server.log, Log.last_index(server)+1, entry))
+def append_request(server, term, req) do
+  append_entry(server, %{term: term, request: req})
 end
 
-def merge_entries(server, entries) do               # entries should be disjoint
-  Log.new(server, Map.merge(server.log, entries))
+def append_entry(server, entry) do
+  server = server
+  |> Log.new(Map.put(server.log, Log.last_index(server)+1, entry))
+  Debug.message(server, "+log", "Adding #{inspect(entry)} Log: #{inspect(Log.get_entries_from(server, 1))}")
+end
+
+def merge_entries(server, entries) do
+  server = server
+  |> Log.new(Map.merge(server.log, entries))
+  Debug.message(server, "+log", "Merged #{inspect(entries)} Log: #{inspect(Log.get_entries_from(server, 1))}")
 end
 
 def delete_entries(server, range) do                 # e.g. delete server.log[3..5] keep rest
-  Log.new(server, Map.drop(server.log, Enum.to_list(range)))
+  server = server
+  |> Log.new(Map.drop(server.log, Enum.to_list(range)))
+  Debug.message(server, "-log", "Delete range #{inspect(range)} Log: #{inspect(Log.get_entries_from(server, 1))}")
 end
 
 def delete_entries_from(server, from) do             # delete server.log[from..last] keep rest
-  Log.delete_entries(server, from .. Log.last_index(server) // 1 )
+  server = server
+  |> Log.delete_entries(from .. Log.last_index(server) // 1 )
+  Debug.message(server, "-log", "Delete from #{inspect(from)} Log: #{inspect(Log.get_entries_from(server, 1))}")
 end
 
 end # Log

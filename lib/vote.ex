@@ -69,6 +69,8 @@ def reply(server, term, q, vote) do
       server
       |> State.role(:LEADER)
       |> State.leaderP(server.selfP)
+      |> State.init_next_index()
+      |> State.init_match_index()
       |> Debug.info("NEW LEADER - #{server.config.node_name}")
       |> ServerLib.send_heartbeat()
     else

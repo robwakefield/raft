@@ -20,10 +20,10 @@ def send_heartbeat(server) do
     send s, { :APPEND_ENTRIES_REQUEST, %{
       term: server.curr_term,
       leaderId: server.selfP,
-      prevLogIndex: 0,
-      prevLogTerm: 0,
+      prevLogIndex: Log.last_index(server),
+      prevLogTerm: Log.last_term(server),
       entries: [],
-      leaderCommit: 0,
+      leaderCommit: server.commit_index,
       sender: server.selfP } }
   end)
   Process.send_after(self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: server.selfP} }, 5)
