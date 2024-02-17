@@ -6,7 +6,7 @@ defmodule Vote do
 
 def election_timeout(server, _term, _election) do
   if server.role == :FOLLOWER or server.role == :CANDIDATE do
-    # Start an election ((c) a period of times goes by without winner)
+    # Start a new election
     server = server
     |> Debug.info("Starting an election!")
     |> Timer.restart_election_timer()
@@ -21,6 +21,7 @@ def election_timeout(server, _term, _election) do
     Enum.each(server.servers, fn s ->
       send self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: s }}
     end)
+
     server
   else
     # We are already leader, no need for another election
@@ -34,15 +35,12 @@ def send_request(server, q) do
   |> Timer.restart_append_entries_timer(q)
 end
 
-def request(server, term, q, _lastLogIndex, _lastLogTerm) do
-  server = if term > server.curr_term do
-    ServerLib.stepdown(server, term)
-  else
-    server
-  end
+def handle_request(server, term, q, _lastLogIndex, _lastLogTerm) do
+  server = server |> ServerLib.stepdown_if_behind(term)
+
   if term == server.curr_term and
     (server.voted_for == nil or server.voted_for == server.selfP) do
-    send q, { :VOTE_REPLY, term, server.selfP, q } # ?
+    send q, { :VOTE_REPLY, term, server.selfP, q }
     server
     |> State.voted_for(q)
     |> Timer.restart_election_timer()
@@ -51,19 +49,18 @@ def request(server, term, q, _lastLogIndex, _lastLogTerm) do
   end
 end
 
-def reply(server, term, q, vote) do
-  server = if term > server.curr_term do
-    ServerLib.stepdown(server, term)
-  else
-    server
-  end
+def handle_reply(server, term, q, vote) do
+  server = server |> ServerLib.stepdown_if_behind(term)
+
   if term == server.curr_term and server.role == :CANDIDATE do
     server = if vote == server.selfP do
       State.add_to_voted_by(server, q)
     else
       server
     end
+
     server = server |> Timer.cancel_append_entries_timer(q)
+
     if State.vote_tally(server) > server.majority do
       # (a) We win the election and become leader
       server
@@ -76,6 +73,7 @@ def reply(server, term, q, vote) do
     else
       server
     end
+
   else
     server
   end

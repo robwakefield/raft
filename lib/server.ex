@@ -29,26 +29,26 @@ defmodule Server do
       receive do
         {:APPEND_ENTRIES_REQUEST, body} ->
         server
-          |> AppendEntries.request(body)
+          |> AppendEntries.handle_request(body)
 
         {:APPEND_ENTRIES_REPLY, term, success, index, sender} ->
           server
-          |> AppendEntries.reply(sender, term, success, index)
+          |> AppendEntries.handle_reply(sender, term, success, index)
 
         {:APPEND_ENTRIES_TIMEOUT, %{term: term, followerP: sender}} ->
           server
           |> Debug.received(":APPEND_ENTRIES_TIMEOUT, #{inspect(sender)}")
-          |> AppendEntries.timeout(term, sender)
+          |> AppendEntries.handle_timeout(term, sender)
 
         {:VOTE_REQUEST, term, sender, lastLogIndex, lastLogTerm} ->
           server
           |> Debug.received(":VOTE_REQUEST, #{term}, #{inspect(sender)}, #{lastLogIndex}, #{lastLogTerm}")
-          |> Vote.request(term, sender, lastLogIndex, lastLogTerm)
+          |> Vote.handle_request(term, sender, lastLogIndex, lastLogTerm)
 
         {:VOTE_REPLY, term, sender, vote} ->
           server
           |> Debug.received(":VOTE_REPLY #{term} #{inspect(sender)} #{inspect(vote)}")
-          |> Vote.reply(term, sender, vote)
+          |> Vote.handle_reply(term, sender, vote)
 
         {:ELECTION_TIMEOUT, %{term: term, election: election} = body} ->
           server
@@ -64,7 +64,7 @@ defmodule Server do
         { :DB_REPLY, db_result } ->
           server
           |> Debug.received(":DB_REPLY #{inspect(db_result)}")
-          |> ClientRequest.reply(server.last_applied, db_result)
+          |> ClientRequest.send_reply(server.last_applied, db_result)
 
         unexpected ->
           Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")

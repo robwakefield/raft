@@ -24,3 +24,6 @@ raft-*.tar
 
 # Temporary files, for example, from tests.
 /tmp/
+
+# Ignore log file
+logs.txt

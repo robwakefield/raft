@@ -48,7 +48,6 @@ run: 	compile
 	@sleep 3
 	@ ${ELIXIR} flooding_${NODE_SUFFIX} ${MIX} cluster_start
 
-
 compile:
 	mix compile
 
