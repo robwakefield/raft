@@ -4,20 +4,21 @@
 
 defmodule ClientRequest do
 
+# TODO: use curr_election to drop old e_tim and votereps
+
 # Handle receieving a client request
 def handle_request(server, req) do
   unless server.role == :LEADER do
     server |> forward(req)
   else
     case req do
-      %{cmd: _, clientP: _, cid: _} ->
+      %{cmd: _, clientP: _, cid: cid} ->
         # Check that this client request has not already been seen
-        # TODO: should this be more robust to the latest client request being different?
-        if Log.last_index(server) != 0
-          and Log.request_at(server, Log.last_index(server)) == req do
+        if MapSet.member?(server.seen, cid) do
           server
         else
           server = server
+          |> State.seen(cid)
           |> Log.append_request(server.curr_term, req)
 
           server = server

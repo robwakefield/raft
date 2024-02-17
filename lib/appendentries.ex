@@ -54,13 +54,15 @@ defmodule AppendEntries do
 
         # Commit the log to DB if it is replicated in a majority of logs
         if count >= server.majority do
+          Debug.assert(server, server.last_applied + 1 <= Log.last_index(server),
+            "last_applied is greater than size of log!")
           req = Log.request_at(server, server.last_applied + 1)
           send server.databaseP, { :DB_REQUEST, req }
           server
           |> State.commit_index(server.last_applied + 1)
           |> State.last_applied(server.last_applied + 1)
-          |> Map.put(:applied, Map.put(server.applied, server.last_applied + 1,
-            %{cmd: req.cmd, cid: req.cid, clientP: req.clientP}))
+          |> State.applied(server.last_applied + 1,
+            %{cmd: req.cmd, cid: req.cid, clientP: req.clientP})
         else
           server
         end
@@ -220,8 +222,8 @@ defmodule AppendEntries do
         send server.databaseP, { :DB_REQUEST, req }
         server
         |> State.last_applied(server.last_applied + 1)
-        |> Map.put(:applied, Map.put(server.applied, server.last_applied + 1,
-          %{cmd: req.cmd, cid: req.cid, clientP: req.clientP}))
+        |> State.applied(server.last_applied + 1,
+          %{cmd: req.cmd, cid: req.cid, clientP: req.clientP})
       end)
     else
       server

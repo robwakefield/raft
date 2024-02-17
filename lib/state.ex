@@ -19,7 +19,8 @@ def initialise(config, server_num, servers, databaseP) do
     majority:     div(length(servers),2) + 1,  # cluster membership changes are not supported in this implementation
 
     databaseP:    databaseP,          # local database - used to send committed entries for execution
-    applied:      MapSet.new,         # cids of cmd already applied - used to filter duplicate requests
+    seen:         MapSet.new,         # cids of cmd already seen by the leader - used to filter duplicate requests
+    applied:      Map.new,         # cids of cmd already applied - used to filter duplicate requests
 
     # ______________ elections ____________________________
     election_timer:  nil,             # one timer for all peers
@@ -75,7 +76,8 @@ def next_index(s, k, v)   do Map.put(s, :next_index, Map.put(s.next_index, k, v)
 def match_index(s, v)     do Map.put(s, :match_index, v) end
 def match_index(s, k, v)  do Map.put(s, :match_index, Map.put(s.match_index, k, v)) end
 
-def applied(s, v)         do Map.put(s, :applied, MapSet.put(s.applied, v)) end
+def seen(s, v)            do Map.put(s, :seen, MapSet.put(s.seen, v)) end
+def applied(s, k, v)      do Map.put(s, :applied, Map.put(s.applied, k, v)) end
 
 def init_next_index(s) do    # initialise when server becomes leader
   new_next_index = for server <- s.servers, into: Map.new do
