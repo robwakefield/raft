@@ -8,6 +8,7 @@ defmodule Monitor do
 def clock(monitor, v)       do Map.put(monitor, :clock, v) end
 def requests(monitor, k, v) do Map.put(monitor, :requests, Map.put(monitor.requests, k, v)) end
 def updates(monitor, k, v)  do Map.put(monitor, :updates, Map.put(monitor.updates, k, v)) end
+def balances(monitor, k, v) do Map.put(monitor, :balances, Map.put(monitor.balances, k, v)) end
 def moves(monitor, v)       do Map.put(monitor, :moves, v) end
 def moves(monitor, k, v)    do Map.put(monitor, :moves, Map.put(monitor.moves, k, v)) end
 
@@ -20,6 +21,7 @@ def start(config) do
     requests:  Map.new,
     updates:   Map.new,
     moves:     Map.new,
+    balances:  Map.new,
   }
   monitor |> Monitor.next()
 end # start
@@ -55,11 +57,16 @@ def next(monitor) do
     |> Monitor.updates(db, seqnum)
     |> Monitor.next()
 
-  { :CLIENT_REQUEST, server_num } ->    # client requests seen by leaders
+    { :CLIENT_REQUEST, server_num } ->    # client requests seen by leaders
     value = Map.get(monitor.requests, server_num, 0)
     monitor
     |> Monitor.requests(server_num, value + 1)
     |> Monitor.next()
+
+    { :BALANCE, db_num, balance } ->    # client requests seen by leaders
+      monitor
+      |> Monitor.balances(db_num, balance)
+      |> Monitor.next()
 
   { :PRINT, term, msg } ->
     IO.puts "term = #{term} #{msg}"
@@ -74,6 +81,8 @@ def next(monitor) do
     IO.puts "  time = #{clock} client requests seen = #{inspect sorted}"
     sorted = monitor.updates  |> Map.to_list |> List.keysort(0)
     IO.puts "  time = #{clock}      db updates done = #{inspect sorted}"
+    sorted = monitor.balances  |> Map.to_list |> List.keysort(0)
+    IO.puts "  time = #{clock}      db balances = #{inspect sorted}"
 
     # if m.config.debug_level == 0 do
     #   min_done   = m.updates  |> Map.values |> Enum.min(fn -> 0 end)

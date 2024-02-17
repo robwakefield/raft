@@ -37,6 +37,7 @@ def next(database) do
     database
     |> Database.balances(account1, balance1 + amount)
     |> Database.balances(account2, balance2 - amount)
+    |> Monitor.send_msg({ :BALANCE, database.db_num, balance1 + amount})
     |> Monitor.send_msg({ :DB_MOVE, database.db_num, database.seqnum, client_request.cmd })
     |> Database.send_reply_to_server(:OK)
     |> Database.next()
