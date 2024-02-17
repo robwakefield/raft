@@ -72,7 +72,7 @@ defmodule AppendEntries do
       end
       # If q has more logs to receive, send them
       server = if Map.get(server.next_index, q) <= Log.last_index(server) do
-        sendAppendEntries(server, q)
+        server |> sendAppendEntries(q)
       else
         server
       end
@@ -82,22 +82,27 @@ defmodule AppendEntries do
     end
   end
 
-  def handle_timeout(server, _term, q) do
-    if server.role == :CANDIDATE do
-      server |> Vote.send_request(q)
-    else
-      if server.role == :LEADER do
-        server |> ServerLib.send_heartbeat()
-      else # :FOLLOWER
-        server
+  def handle_timeout(server, term, q) do
+    unless term < server.curr_term do
+      if server.role == :CANDIDATE do
+        server |> Vote.send_request(q)
+      else
+        if server.role == :LEADER do
+          # Sendout heartbeat
+          # TODO: check if this should use send_heartbeat() function instead
+          server |> sendAppendEntries(q)
+        else # :FOLLOWER
+          server
+        end
       end
+    else
+      server
     end
   end
 
   # Send an AppendEntries request to q
   def sendAppendEntries(server, q) do
     lastLogIndex = get_lastLogIndex(server, q)
-    Debug.assert(server, lastLogIndex != nil, "(sendAppendEntries) lastLogIndex is nil")
 
     server = server
     |> Timer.restart_append_entries_timer(q)
@@ -193,8 +198,7 @@ defmodule AppendEntries do
       index = index + 1
       if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
         server = server
-          #|> Log.new(Log.get_entries(server, 1..(index-1)))
-          #TODO: change this to allow for deleting invalid entries
+          |> Log.new(Log.get_entries(server, 1..(index-1)))
           |> Log.append_entry(e)
         {server, index}
       else

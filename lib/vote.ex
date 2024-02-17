@@ -30,17 +30,26 @@ def election_timeout(server, _term, _election) do
 end
 
 def send_request(server, q) do
-  send q, { :VOTE_REQUEST, server.curr_term, server.selfP, 0, "" }
+  lastLogIndex = Log.last_index(server)
+  lastLogTerm = Log.last_term(server)
+
+  send q, { :VOTE_REQUEST, server.curr_term, server.selfP, lastLogIndex, lastLogTerm }
+
   server
   |> Timer.restart_append_entries_timer(q)
 end
 
-def handle_request(server, term, q, _lastLogIndex, _lastLogTerm) do
+def handle_request(server, term, q, lastLogIndex, lastLogTerm) do
   server = server |> ServerLib.stepdown_if_behind(term)
 
-  if term == server.curr_term and
-    (server.voted_for == nil or server.voted_for == server.selfP) do
+  if term == server.curr_term
+    and (server.voted_for == nil or server.voted_for == server.selfP)
+    and (lastLogTerm > Log.last_term(server)
+        or (lastLogTerm == Log.last_term(server)
+            and lastLogIndex >= Log.last_index(server)))
+  do
     send q, { :VOTE_REPLY, term, server.selfP, q }
+
     server
     |> State.voted_for(q)
     |> Timer.restart_election_timer()
