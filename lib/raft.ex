@@ -41,6 +41,25 @@ def start(config, :cluster_start) do
     Node.spawn(:'client#{num}_#{config.node_suffix}', Client, :start, [config, num, servers])
   end # for
 
+  unless Map.get(config, :crash_leaders_after) == nil do
+    Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
+  end
+
+  next(config, servers)
+
 end # start
+
+defp next(config, servers) do
+  receive do
+    {:LEADER_CRASH} ->
+      # Send a signal for the leader to crash
+      Enum.each(servers,
+      fn s ->
+        send s, {:LEADER_CRASH}
+      end)
+      Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
+  end
+  next(config, servers)
+end
 
 end # Raft

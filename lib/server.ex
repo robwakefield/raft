@@ -66,6 +66,16 @@ defmodule Server do
           |> Debug.received(":DB_REPLY #{inspect(db_result)}")
           |> ClientRequest.send_reply(server.last_applied, db_result)
 
+        {:LEADER_CRASH} ->
+          unless server.role == :LEADER do
+            server
+          else
+            crash_delay = 1500
+            Debug.info(server, "I have CRASHED for #{crash_delay}ms!")
+            :timer.sleep(crash_delay)
+            Debug.info(server, "I am back ONLINE!")
+          end
+
         unexpected ->
           Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")
       end
