@@ -24,6 +24,8 @@ def start(config, :cluster_start) do
     Node.spawn(:'server#{num}_#{config.node_suffix}', Server, :start, [config, num])
   end # for
 
+  send config.monitorP, {:SERVERS, servers}
+
   databases = for num <- 1 .. config.n_servers do
     Node.spawn(:'server#{num}_#{config.node_suffix}', Database, :start, [config, num])
   end # for
@@ -45,6 +47,8 @@ def start(config, :cluster_start) do
     Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
   end
 
+  #Process.send_after(self(), { :SHOW_LOG }, 300)
+
   next(config, servers)
 
 end # start
@@ -58,6 +62,13 @@ defp next(config, servers) do
         send s, {:LEADER_CRASH}
       end)
       Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
+    {:SHOW_LOG} ->
+      # Send a signal to each server to print their log
+      Enum.each(servers,
+      fn s ->
+        send s, {:SHOW_LOG}
+      end)
+      Process.send_after(self(), { :SHOW_LOG }, 300)
   end
   next(config, servers)
 end

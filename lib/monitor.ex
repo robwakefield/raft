@@ -18,6 +18,7 @@ def start(config) do
   monitor = %{
     config:    config,
     clock:     0,
+    servers:   [],
     requests:  Map.new,
     updates:   Map.new,
     moves:     Map.new,
@@ -36,6 +37,7 @@ def next(monitor) do
     done = Map.get(monitor.updates, db, 0)
 
     if seqnum != done + 1 do
+      ask_for_logs(monitor, done)
       Monitor.halt "  ** error db #{db}: seq #{seqnum} expecting #{done+1}"
     end # if
 
@@ -47,8 +49,9 @@ def next(monitor) do
 
       t -> # already logged - check command
         if amount != t.amount or from != t.from or to != t.to do
-            Monitor.halt " ** error db #{db}.#{done} [#{amount},#{from},#{to}] " <>
-              "= log #{done}/#{map_size(monitor.moves)} [#{t.amount},#{t.from},#{t.to}]"
+          ask_for_logs(monitor, done)
+          Monitor.halt " ** error db #{db}.#{done} [#{amount},#{from},#{to}] " <>
+            "= log #{done}/#{map_size(monitor.moves)} [#{t.amount},#{t.from},#{t.to}]"
         end # if
         monitor
       end # case
@@ -96,7 +99,13 @@ def next(monitor) do
 
   # ** ADD ADDITIONAL MESSAGES HERE
 
+  {:SERVERS, servers} ->
+    monitor
+    |> Map.put(:servers, servers)
+    |> Monitor.next()
+
   unexpected ->
+    ask_for_logs(monitor)
      Monitor.halt "monitor: unexpected message #{inspect unexpected}"
 
   end # receive
@@ -113,5 +122,12 @@ def halt(string) do
   Helper.node_halt("monitor: #{string}")
 end # halt
 
+defp ask_for_logs(monitor, from \\ 1) do
+  Enum.each(monitor.servers,
+    fn s ->
+      send s, {:SHOW_LOG, from}
+    end)
+  monitor
+end
 
 end # Monitor

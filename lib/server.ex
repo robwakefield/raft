@@ -76,6 +76,19 @@ defmodule Server do
             Debug.info(server, "I am back ONLINE!")
           end
 
+        {:SHOW_LOG, from} ->
+          from = if from == 0 do
+            Log.last_index(server) - 2
+          else
+            from
+          end
+          log = Enum.map(Log.get_entries(server, max(from - 3, 1)..min(from + 3, Log.last_index(server))),
+          fn {_, e} ->
+            e.request.cid
+          end)
+          server
+          |> Debug.message("showlog", "#{server.server_num}: #{inspect(log)}")
+
         unexpected ->
           Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")
       end
