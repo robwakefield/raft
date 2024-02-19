@@ -17,8 +17,13 @@ defmodule AppendEntries do
         sender: q
       } ->
 
+        server = if prevLogIndex == leaderCommit do
+          server |> Debug.received(":APPEND_ENTRIES_REQUEST, #{inspect(body)}")
+        else
+          server |> Debug.message("+hb", "HEARTBEAT from #{inspect(q)}")
+        end
+
         server
-        |> Debug.message("areq", ":APPEND_ENTRIES_REQUEST, #{inspect(body)}")
         |> ServerLib.stepdown_if_behind(term)
         |> notify_term_is_behind(term, q)
         |> send_reply(term, prevLogIndex, prevLogTerm, entries, leaderId, leaderCommit, q)
@@ -40,10 +45,10 @@ defmodule AppendEntries do
           server
           |> State.next_index(q, index + 1)
           |> State.match_index(q, index)
-          |> Debug.message("arep", ":APPEND_ENTRIES_REPLY, term:#{inspect(term)} #{inspect(success)} #{inspect(index)}")
+          |> Debug.received(":APPEND_ENTRIES_REPLY, term:#{inspect(term)} #{inspect(success)} #{inspect(index)}")
         else
           server
-          |> Debug.message("hb", "HEARTBEAT REPLY from #{inspect(q)}")
+          |> Debug.message("-hb", "HEARTBEAT REPLY from #{inspect(q)}")
         end
 
         # Count in how many logs the entry is replicated

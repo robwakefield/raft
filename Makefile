@@ -6,12 +6,16 @@
 SERVERS   = 10    	# 3 or more
 CLIENTS   = 5    	  # 1 or more
 TIMELIMIT = 15000	  # milli-seconds(ms) to quit after
-PARAMS    = default	# e.g. default, slower, faster, etc
+PARAMS    = client_stop	# e.g. default, slower, faster, etc
 
-DEBUG_OPTIONS = "!inf showlog"
+DEBUG_OPTIONS = "!inf"
 DEBUG_LEVEL   = 1
 
-#DEBUG_OPTIONS = "!inf ?rec +log -log showlog hb"
+#DEBUG_OPTIONS = "!inf ?rec +log -log showlog +hb -hb"
+# log: (+) for Log additions. (-) for Log deletions
+# hb: (+) for Heartbeat requests. (-) for Heartbeat replies
+# showlog: Show the current log for each server when a database error occurs
+
 #DEBUG_OPTIONS = "+areq -areq +arep -arep +vreq +vall -vreq +vrep -vrep +atim -atim +etim -etim +dreq -dreq +drep -drep -creq -crep"
 
 # AppendEntries(areq, arep, atim), Vote(vreq, vrep, vall), Election(etim), DB(dreq, drep), Client(creq, crep)
