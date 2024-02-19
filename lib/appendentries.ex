@@ -54,14 +54,15 @@ defmodule AppendEntries do
 
         # Commit the log to DB if it is replicated in a majority of logs
         if count >= server.majority do
-          Debug.assert(server, server.last_applied + 1 <= Log.last_index(server),
+          newly_applied = server.last_applied + 1
+          Debug.assert(server, newly_applied <= Log.last_index(server),
             "last_applied is greater than size of log!")
-          req = Log.request_at(server, server.last_applied + 1)
+          req = Log.request_at(server, newly_applied)
           send server.databaseP, { :DB_REQUEST, req }
           server
-          |> State.commit_index(server.last_applied + 1)
-          |> State.last_applied(server.last_applied + 1)
-          |> State.applied(server.last_applied + 1,
+          |> State.commit_index(newly_applied)
+          |> State.last_applied(newly_applied)
+          |> State.applied(newly_applied,
             %{cmd: req.cmd, cid: req.cid, clientP: req.clientP})
         else
           server
@@ -110,12 +111,17 @@ defmodule AppendEntries do
     |> Timer.restart_append_entries_timer(q)
     |> State.next_index(q, lastLogIndex)
 
+    # TODO: DEBUG currently sending all of log
     send q, {:APPEND_ENTRIES_REQUEST, %{
       term: server.curr_term,
       leaderId: server.leaderP,
-      prevLogIndex: lastLogIndex - 1,
-      prevLogTerm: Log.term_at(server, lastLogIndex - 1),
-      entries: Log.get_entries(server, lastLogIndex..Log.last_index(server)),
+      #prevLogIndex: lastLogIndex - 1,
+      #prevLogTerm: Log.term_at(server, lastLogIndex - 1),
+      #entries: Log.get_entries(server, lastLogIndex..Log.last_index(server)),
+
+      prevLogIndex: 0,
+      prevLogTerm: Log.term_at(server, 0),
+      entries: Log.get_entries(server, 1..server.commit_index),
       leaderCommit: server.commit_index,
       sender: server.selfP
     }}
@@ -195,7 +201,7 @@ defmodule AppendEntries do
 
     # Repair and append our log to match the log from the request
     # Return the index of the last correct log we now have
-    {server, index} = Enum.reduce(entries, {server, index},
+    {server, _index} = Enum.reduce(entries, {server, index},
     fn {_, e}, {server, index} ->
       Debug.assert(server, server != nil, "(storeEntries) server is nil")
       index = index + 1
@@ -208,6 +214,15 @@ defmodule AppendEntries do
         {server, index}
       end
     end)
+
+    # TODO: setting the log to be the same as leader for debugging
+    server = Log.new(server)
+    server = Enum.reduce(entries, server,
+    fn {_, e}, server ->
+      Log.append_entry(server, e)
+    end)
+    index = Log.last_index(server)
+    # END OF DEBUGGING CHANGES
 
     # Update commit index that we can safely commit to DB
     server = server

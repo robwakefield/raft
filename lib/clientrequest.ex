@@ -21,9 +21,6 @@ def handle_request(server, req) do
           |> State.seen(cid)
           |> Log.append_request(server.curr_term, req)
 
-          server = server
-          |> State.commit_index(Log.last_index(server))
-
           Enum.reduce(server.servers -- [server.selfP], server,
           fn q, server ->
             server |> AppendEntries.sendAppendEntries(q)

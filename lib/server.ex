@@ -87,7 +87,7 @@ defmodule Server do
             e.request.cid
           end)
           server
-          |> Debug.message("showlog", "#{server.server_num}: #{inspect(log)}")
+          |> Debug.message("showlog", "#{server.server_num}@#{from} #{inspect(log)}")
 
         unexpected ->
           Helper.node_halt("***** Server: unexpected message #{inspect(unexpected)}")
