@@ -18,7 +18,7 @@ defmodule AppendEntries do
       } ->
 
         server
-        |> debug_filter_heartbeat(entries, body, q)
+        |> Debug.message("areq", ":APPEND_ENTRIES_REQUEST, #{inspect(body)}")
         |> ServerLib.stepdown_if_behind(term)
         |> notify_term_is_behind(term, q)
         |> send_reply(term, prevLogIndex, prevLogTerm, entries, leaderId, leaderCommit, q)
@@ -108,7 +108,7 @@ defmodule AppendEntries do
     # Index of the last known item in q's log
     prevLogIndex = get_lastLogIndex(server, q)
     # Index of the next item q requires
-    nextLogIndex = min(prevLogIndex + 1, Log.last_index(server))
+    _nextLogIndex = min(prevLogIndex + 1, Log.last_index(server))
 
     server = server
     |> Timer.restart_append_entries_timer(q)
@@ -120,21 +120,12 @@ defmodule AppendEntries do
       leaderId: server.leaderP,
       prevLogIndex: prevLogIndex,
       prevLogTerm: Log.term_at(server, prevLogIndex),
-      entries: Log.get_entries(server, 1..Log.last_index(server)), # Send all for now
+      entries: Log.get_entries(server, 1..Log.last_index(server)), # TODO: Send only the new entries
       leaderCommit: server.commit_index,
       sender: server.selfP
     }}
 
     server
-  end
-
-  # Print correct debug message to filter out heartbeats
-  defp debug_filter_heartbeat(server, entries, body, q) do
-    unless entries == [] do
-      server |> Debug.message("areq", ":APPEND_ENTRIES_REQUEST, #{inspect(body)}")
-    else
-      server |> Debug.message("hb", ":HEARTBEAT from #{inspect(q)}")
-    end
   end
 
   # Perform action based on an incorrect term
@@ -196,37 +187,27 @@ defmodule AppendEntries do
 
   # Update our log and DB based on information from an AppendEntries request
   defp storeEntries(server, prevLogIndex, entries, c) do
-    # check prevLogIndex >= index + 1 ?
-    # my_map = Map.to_list(entries)
-    # {index, _} = unless my_map == [] do hd(my_map) else {0, nil} end
-    # Debug.assert(server, prevLogIndex + 1 >= index, "storeEntries: index too high #{prevLogIndex} + 1 >= #{index}")
-
-    # # Repair and append our log to match the log from the request
-    # # Return the index of the last correct log we now have
-    # {server, index} = Enum.reduce(entries, {server, index - 1},
-    # fn {_, e}, {server, index} ->
-    #   index = index + 1
-    #   if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
-    #     server = server
-    #       |> Log.new(Log.get_entries(server, 1..(index-1)))
-    #       |> Log.append_entry(e)
-    #     {server, index}
-    #   else
-    #     {server, index}
-    #   end
-    # end)
-
-    # index = max(index, 0)
-    # Debug.assert(server, prevLogIndex <= index, "storeEntries: index decreased #{prevLogIndex} <= #{index}")
-
-    # TODO: setting the log to be the same as leader for debugging
-    server = Log.new(server)
-    server = Enum.reduce(Enum.sort(entries), server,
-    fn {_, e}, server ->
-      Log.append_entry(server, e)
+    # Repair and append our log to match the log from the request
+    # Return the index of the last correct log we now have
+    {server, index} = Enum.reduce(Enum.sort(entries), {server, prevLogIndex},
+    fn {entry_index, e}, {server, index} ->
+      # Don't do anything until we reach an entry > prevLogIndex
+      if entry_index <= prevLogIndex do
+        {server, index}
+      else
+        index = index + 1
+        if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
+          # Add the entry to our log (possibly correcting an incorrect log)
+          server = server
+            |> Log.new(Log.get_entries(server, 1..(index-1)))
+            |> Log.append_entry(e)
+          {server, index}
+        else
+          # We already have the entry in our log, so keep it there
+          {server, index}
+        end
+      end
     end)
-    index = Log.last_index(server)
-    # END OF DEBUGGING CHANGES
 
     # Update commit index that we can safely commit to DB
     server = server
