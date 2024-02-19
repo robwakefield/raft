@@ -61,7 +61,7 @@ def params :default do
       # 4 => 8_000,
     },
 
-    crash_leaders_after:      3000,    # nil or time after which leaders will crash
+    crash_leaders_after:      nil,    # nil or time after which leaders will crash
 
   }
 end # params :default
@@ -69,29 +69,44 @@ end # params :default
 
 # add further params functions for your own tests and experiments
 
-# _________________________________________________________ params :testing_XX
-def params :testing_XX do
+# _________________________________________________________ params :slower
+def params :slower do
   Map.merge (params :default),
   %{
-    # omitted
+    client_request_interval: 1_000,
+    client_reply_timeout:    5_000,
+    append_entries_timeout:  100,
   }
-end # params :testing_XX
+end # params :slower
 
-# etc ..
+# _________________________________________________________ params :leader_crash
+def params :leader_crash do
+  Map.merge (params :default),
+  %{
+    crash_leaders_after:     1500,
+  }
+end # params :slow
+
+# _________________________________________________________ params :client_stop
+def params :client_stop do
+  Map.merge (params :default),
+  %{
+    max_client_requests:     100,
+  }
+end # params :client_stop
+
+# _________________________________________________________ params :server_crash
+def params :server_crash do
+  Map.merge (params :default),
+  %{
+    crash_servers: %{
+        3 => 5_000,
+        4 => 8_000,
+      },
+  }
+end # params :server_crash
 
 end # Configuration
-
-
-
-
-
-
-
-
-
-
-
-
 
 """
 def read_host_map(file_name) do      # read map of hosts for fully distributed execution via ssh
