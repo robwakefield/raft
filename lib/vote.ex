@@ -8,7 +8,6 @@ def election_timeout(server, _term, _election) do
   if server.role == :FOLLOWER or server.role == :CANDIDATE do
     # Start a new election
     server = server
-    |> Debug.info("Starting an election!")
     |> Timer.restart_election_timer()
     |> State.inc_term()
     |> State.role(:CANDIDATE)
@@ -16,6 +15,7 @@ def election_timeout(server, _term, _election) do
     |> State.new_voted_by()
     |> State.add_to_voted_by(server.selfP)
     |> Timer.cancel_all_append_entries_timers()
+    |> Debug.info("Starting an election!")
 
     # Timeout everyone else so they can vote for me
     Enum.each(server.servers, fn s ->

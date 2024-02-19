@@ -39,7 +39,7 @@ def send_heartbeat(server, delay \\ 5) do
   end)
   Process.send_after(self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: server.selfP} }, delay)
   server
-  |> Timer.restart_append_entries_timer(server.selfP)
+  |> Timer.cancel_append_entries_timer(server.selfP)
 end
 
 end # ServerLib

@@ -89,10 +89,10 @@ defmodule AppendEntries do
       if server.role == :CANDIDATE do
         server |> Vote.send_request(q)
       else
-        if server.role == :LEADER do
+        if server.role == :LEADER and q == server.selfP do
           # Sendout heartbeat
           # TODO: check if this should use send_heartbeat() function instead
-          server |> sendAppendEntries(q)
+          server |> ServerLib.send_heartbeat()
         else # :FOLLOWER
           server
         end
@@ -170,8 +170,9 @@ defmodule AppendEntries do
 
   # Restart RPC and election timers as we have heard from the leader/server
   defp reset_timers(server, q) do
-    if q == server.leaderP and server.leaderP != nil do
+    if q == server.leaderP or server.leaderP == nil do
       server
+      |> State.leaderP(q)
       |> Timer.restart_election_timer()
     else
       server
