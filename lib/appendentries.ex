@@ -105,23 +105,22 @@ defmodule AppendEntries do
 
   # Send an AppendEntries request to q
   def sendAppendEntries(server, q) do
-    lastLogIndex = get_lastLogIndex(server, q)
+    # Index of the last known item in q's log
+    prevLogIndex = get_lastLogIndex(server, q)
+    # Index of the next item q requires
+    nextLogIndex = min(prevLogIndex + 1, Log.last_index(server))
 
     server = server
     |> Timer.restart_append_entries_timer(q)
-    |> State.next_index(q, lastLogIndex)
+    |> State.next_index(q, prevLogIndex + 1)
 
     # TODO: DEBUG currently sending all of log
     send q, {:APPEND_ENTRIES_REQUEST, %{
       term: server.curr_term,
       leaderId: server.leaderP,
-      #prevLogIndex: lastLogIndex - 1,
-      #prevLogTerm: Log.term_at(server, lastLogIndex - 1),
-      #entries: Log.get_entries(server, lastLogIndex..Log.last_index(server)),
-
-      prevLogIndex: 0,
-      prevLogTerm: Log.term_at(server, 0),
-      entries: Log.get_entries(server, 1..server.commit_index),
+      prevLogIndex: prevLogIndex,
+      prevLogTerm: Log.term_at(server, prevLogIndex),
+      entries: Log.get_entries(server, 1..Log.last_index(server)), # Send all for now
       leaderCommit: server.commit_index,
       sender: server.selfP
     }}
@@ -186,38 +185,43 @@ defmodule AppendEntries do
     |> Timer.restart_append_entries_timer(q)
   end
 
-  # Get the index of the last log for server, ignoring nils
+  # Get the index of the last item in q's log
   defp get_lastLogIndex(server, q) do
     if is_nil(Map.get(server.next_index, q)) do
-      Log.last_index(server)
+      0
     else
-      max(Map.get(server.next_index, q), Log.last_index(server))
+      max(Map.get(server.next_index, q) - 1, 0)
     end
   end
 
   # Update our log and DB based on information from an AppendEntries request
   defp storeEntries(server, prevLogIndex, entries, c) do
-    index = prevLogIndex
+    # check prevLogIndex >= index + 1 ?
+    # my_map = Map.to_list(entries)
+    # {index, _} = unless my_map == [] do hd(my_map) else {0, nil} end
+    # Debug.assert(server, prevLogIndex + 1 >= index, "storeEntries: index too high #{prevLogIndex} + 1 >= #{index}")
 
-    # Repair and append our log to match the log from the request
-    # Return the index of the last correct log we now have
-    {server, _index} = Enum.reduce(entries, {server, index},
-    fn {_, e}, {server, index} ->
-      Debug.assert(server, server != nil, "(storeEntries) server is nil")
-      index = index + 1
-      if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
-        server = server
-          |> Log.new(Log.get_entries(server, 1..(index-1)))
-          |> Log.append_entry(e)
-        {server, index}
-      else
-        {server, index}
-      end
-    end)
+    # # Repair and append our log to match the log from the request
+    # # Return the index of the last correct log we now have
+    # {server, index} = Enum.reduce(entries, {server, index - 1},
+    # fn {_, e}, {server, index} ->
+    #   index = index + 1
+    #   if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
+    #     server = server
+    #       |> Log.new(Log.get_entries(server, 1..(index-1)))
+    #       |> Log.append_entry(e)
+    #     {server, index}
+    #   else
+    #     {server, index}
+    #   end
+    # end)
+
+    # index = max(index, 0)
+    # Debug.assert(server, prevLogIndex <= index, "storeEntries: index decreased #{prevLogIndex} <= #{index}")
 
     # TODO: setting the log to be the same as leader for debugging
     server = Log.new(server)
-    server = Enum.reduce(entries, server,
+    server = Enum.reduce(Enum.sort(entries), server,
     fn {_, e}, server ->
       Log.append_entry(server, e)
     end)

@@ -28,14 +28,7 @@ end
 def send_heartbeat(server, delay \\ 5) do
   Enum.each(server.servers -- [server.selfP],
   fn s ->
-    send s, { :APPEND_ENTRIES_REQUEST, %{
-      term: server.curr_term,
-      leaderId: server.selfP,
-      prevLogIndex: Log.last_index(server),
-      prevLogTerm: Log.last_term(server),
-      entries: [],
-      leaderCommit: server.commit_index,
-      sender: server.selfP } }
+    AppendEntries.sendAppendEntries(server, s)
   end)
   Process.send_after(self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: server.selfP} }, delay)
   server
