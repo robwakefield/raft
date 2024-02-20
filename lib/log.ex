@@ -1,3 +1,8 @@
+# Rob Wakefield (rgw20)
+
+###
+# Added Debug.message("log", "") to all changes to the log
+###
 
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2

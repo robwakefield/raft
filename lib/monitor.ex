@@ -1,3 +1,10 @@
+# Rob Wakefield (rgw20)
+
+###
+# Added balance tracking for debugging
+# Added messages {:SHOW_LOG} to be sent to all servers on database error
+# Change marked with: CHANGES START ~ CHANGES END
+###
 
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2
@@ -22,7 +29,9 @@ def start(config) do
     requests:  Map.new,
     updates:   Map.new,
     moves:     Map.new,
+    # CHANGES START
     balances:  Map.new,
+    # CHANGES END
   }
   monitor |> Monitor.next()
 end # start
@@ -37,7 +46,9 @@ def next(monitor) do
     done = Map.get(monitor.updates, db, 0)
 
     if seqnum != done + 1 do
+      # CHANGES START
       ask_for_logs(monitor, done)
+      # CHANGES END
       Monitor.halt "  ** error db #{db}: seq #{seqnum} expecting #{done+1}"
     end # if
 
@@ -49,7 +60,9 @@ def next(monitor) do
 
       t -> # already logged - check command
         if amount != t.amount or from != t.from or to != t.to do
+          # CHANGES START
           ask_for_logs(monitor, done)
+          # CHANGES END
           Monitor.halt " ** error db #{db}.#{done} [#{amount},#{from},#{to}] " <>
             "= log #{done}/#{map_size(monitor.moves)} [#{t.amount},#{t.from},#{t.to}]"
         end # if
@@ -66,10 +79,12 @@ def next(monitor) do
     |> Monitor.requests(server_num, value + 1)
     |> Monitor.next()
 
-    { :BALANCE, db_num, balance } ->    # client requests seen by leaders
+    # CHANGES START
+    { :BALANCE, db_num, balance } ->
       monitor
       |> Monitor.balances(db_num, balance)
       |> Monitor.next()
+    # CHANGES END
 
   { :PRINT, term, msg } ->
     IO.puts "term = #{term} #{msg}"
@@ -99,10 +114,12 @@ def next(monitor) do
 
   # ** ADD ADDITIONAL MESSAGES HERE
 
-  {:SERVERS, servers} ->
+  #CHANGES START
+  {:SERVERS, servers} -> # Receive list of servers from Raft.ex
     monitor
     |> Map.put(:servers, servers)
     |> Monitor.next()
+  # CHANGES END
 
   unexpected ->
     ask_for_logs(monitor)

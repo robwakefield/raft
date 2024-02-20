@@ -1,4 +1,6 @@
 
+# Rob Wakefield (rgw20)
+
 # distributed algorithms, n.dulay, 14 jan 24 
 # coursework, raft 
 # Makefile, v1

@@ -1,3 +1,5 @@
+# Rob Wakefield (rgw20)
+
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2
 

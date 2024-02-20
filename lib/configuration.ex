@@ -1,3 +1,8 @@
+# Rob Wakefield (rgw20)
+
+###
+# See below for extra configuration params implemented
+###
 
 # distributed algorithms, n.dulay, 14 jan 2024
 # raft, configuration parameters v2

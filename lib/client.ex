@@ -1,3 +1,9 @@
+# Rob Wakefield (rgw20)
+
+###
+# Fixed typo of {:CLIENT_TIMEOUT}
+# Change marked with: CHANGES START ~ CHANGES END
+###
 
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2
@@ -28,7 +34,9 @@ def start(config, client_num, servers) do
     result:     nil,
   }
 
+  # CHANGES START
   Process.send_after(self(), {:CLIENT_TIMELIMIT}, config.client_timelimit)
+  # CHANGES END
 
   Process.sleep(config.election_timeout_range.first)  # wait until first elections run
 

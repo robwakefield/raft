@@ -1,3 +1,9 @@
+# Rob Wakefield (rgw20)
+
+###
+# next(config, servers) function added to allow for sending of crash messages to servers
+# Change marked with: CHANGES START ~ CHANGES END
+###
 
 # distributed algorithms, n.dulay, 14 jan 2024
 # coursework, raft consensus, v2
@@ -43,6 +49,7 @@ def start(config, :cluster_start) do
     Node.spawn(:'client#{num}_#{config.node_suffix}', Client, :start, [config, num, servers])
   end # for
 
+  # CHANGES START
   unless Map.get(config, :crash_leaders_after) == nil do
     Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
   end
@@ -51,11 +58,13 @@ def start(config, :cluster_start) do
   fn {n, delay} ->
     Process.send_after(self(), { :SERVER_CRASH, n }, delay)
   end)
+  # CHANGES END
 
   next(config, servers)
 
 end # start
 
+# CHANGES START
 defp next(config, servers) do
   receive do
     {:LEADER_CRASH} ->
@@ -84,5 +93,6 @@ defp next(config, servers) do
   end
   next(config, servers)
 end
+# CHANGES END
 
 end # Raft
