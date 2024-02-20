@@ -97,7 +97,6 @@ defmodule AppendEntries do
       else
         if server.role == :LEADER and q == server.selfP do
           # Sendout heartbeat
-          # TODO: check if this should use send_heartbeat() function instead
           server |> ServerLib.send_heartbeat()
         else # :FOLLOWER
           server
