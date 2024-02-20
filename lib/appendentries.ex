@@ -111,13 +111,12 @@ defmodule AppendEntries do
   # Send an AppendEntries request to q
   def sendAppendEntries(server, q) do
     # Index of the last known item in q's log
-    prevLogIndex = get_lastLogIndex(server, q)
+    prevLogIndex = min(get_lastLogIndex(server, q), Log.last_index(server))
 
     server = server
     |> Timer.restart_append_entries_timer(q)
     |> State.next_index(q, prevLogIndex + 1)
 
-    # TODO: DEBUG currently sending all of log
     send q, {:APPEND_ENTRIES_REQUEST, %{
       term: server.curr_term,
       leaderId: server.leaderP,
