@@ -5,8 +5,8 @@
 
 SERVERS   = 10    	# 3 or more
 CLIENTS   = 5    	  # 1 or more
-TIMELIMIT = 15000	  # milli-seconds(ms) to quit after
-PARAMS    = client_stop	# e.g. default, slower, faster, etc
+TIMELIMIT = 10000	  # milli-seconds(ms) to quit after
+PARAMS    = split_vote	# e.g. default, slower, faster, etc
 
 DEBUG_OPTIONS = "!inf"
 DEBUG_LEVEL   = 1

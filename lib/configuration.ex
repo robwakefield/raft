@@ -83,7 +83,7 @@ end # params :slower
 def params :leader_crash do
   Map.merge (params :default),
   %{
-    crash_leaders_after:     1500,
+    crash_leaders_after:     1000,
   }
 end # params :slow
 
@@ -91,7 +91,7 @@ end # params :slow
 def params :client_stop do
   Map.merge (params :default),
   %{
-    max_client_requests:     100,
+    max_client_requests:     1500,
   }
 end # params :client_stop
 
@@ -105,6 +105,14 @@ def params :server_crash do
       },
   }
 end # params :server_crash
+
+# _________________________________________________________ params :split_vote
+def params :split_vote do
+  Map.merge (params :default),
+  %{
+    election_timeout_range:  150..150,
+  }
+end # params :split_vote
 
 end # Configuration
 
