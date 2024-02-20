@@ -89,6 +89,10 @@ end # params :slower
 def params :leader_crash do
   Map.merge (params :default),
   %{
+    raft_timelimit:  15_000,
+    n_servers:       5,
+    n_clients:       3,
+
     crash_leaders_after:     1500,
     crash_leaders_repeat:    nil,
     crash_leaders_duration:  5000,
@@ -109,6 +113,10 @@ end # params :client_stop
 def params :server_crash do
   Map.merge (params :default),
   %{
+    raft_timelimit:  15_000,
+    n_servers:       5,
+    n_clients:       3,
+
     crash_servers: %{
       3 => 1500,
       4 => 2000,
@@ -129,6 +137,19 @@ def params :split_vote do
     crash_leaders_after:     2000,
   }
 end # params :split_vote
+
+# _________________________________________________________ params :long
+def params :long do
+  Map.merge (params :default),
+  %{
+    raft_timelimit:  60_000,
+    client_timelimit:  60_000,
+    debug_options:   "",
+
+    monitor_interval:        30_000,
+    max_client_requests:     100_000,
+  }
+end # params :long
 
 end # Configuration
 
