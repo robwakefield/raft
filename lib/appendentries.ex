@@ -112,8 +112,6 @@ defmodule AppendEntries do
   def sendAppendEntries(server, q) do
     # Index of the last known item in q's log
     prevLogIndex = get_lastLogIndex(server, q)
-    # Index of the next item q requires
-    _nextLogIndex = min(prevLogIndex + 1, Log.last_index(server))
 
     server = server
     |> Timer.restart_append_entries_timer(q)
@@ -125,7 +123,7 @@ defmodule AppendEntries do
       leaderId: server.leaderP,
       prevLogIndex: prevLogIndex,
       prevLogTerm: Log.term_at(server, prevLogIndex),
-      entries: Log.get_entries(server, 1..Log.last_index(server)), # TODO: Send only the new entries
+      entries: Log.get_entries(server, prevLogIndex..Log.last_index(server)),
       leaderCommit: server.commit_index,
       sender: server.selfP
     }}
@@ -155,7 +153,7 @@ defmodule AppendEntries do
 
       {server, index} = if success do
         # Update our log and possibly store to DB
-        storeEntries(server, prevLogIndex, entries, leaderCommit)
+        storeEntries(server, entries, leaderCommit)
       else
         {server, index}
       end
@@ -191,7 +189,7 @@ defmodule AppendEntries do
   end
 
   # Update our log and DB based on information from an AppendEntries request
-  defp storeEntries(server, prevLogIndex, entries, c) do
+  defp storeEntries(server, entries, c) do
     # Repair and append our log to match the log from the request
     # Return the index of the last correct log we now have
     server = server |> Log.new(Map.merge(server.log, entries))
