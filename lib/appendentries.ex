@@ -194,25 +194,8 @@ defmodule AppendEntries do
   defp storeEntries(server, prevLogIndex, entries, c) do
     # Repair and append our log to match the log from the request
     # Return the index of the last correct log we now have
-    {server, index} = Enum.reduce(Enum.sort(entries), {server, prevLogIndex},
-    fn {entry_index, e}, {server, index} ->
-      # Don't do anything until we reach an entry > prevLogIndex
-      if entry_index <= prevLogIndex do
-        {server, index}
-      else
-        index = index + 1
-        if index > Log.last_index(server) or Log.term_at(server, index) != e.term do
-          # Add the entry to our log (possibly correcting an incorrect log)
-          server = server
-            |> Log.new(Log.get_entries(server, 1..(index-1)))
-            |> Log.append_entry(e)
-          {server, index}
-        else
-          # We already have the entry in our log, so keep it there
-          {server, index}
-        end
-      end
-    end)
+    server = server |> Log.new(Map.merge(server.log, entries))
+    index = Log.last_index(server)
 
     # Update commit index that we can safely commit to DB
     server = server
@@ -220,11 +203,9 @@ defmodule AppendEntries do
 
     # Store the committed entries to the db
     server = if server.last_applied < server.commit_index do
-      Enum.reduce(
-        Log.get_entries(server, (server.last_applied + 1)..server.commit_index),
-        server,
-      fn {_, entry}, server ->
-        req = entry.request
+      Enum.reduce((server.last_applied + 1)..server.commit_index, server,
+      fn i, server ->
+        req = Log.request_at(server, i)
         send server.databaseP, { :DB_REQUEST, req }
         server
         |> State.last_applied(server.last_applied + 1)

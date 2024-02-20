@@ -15,7 +15,7 @@ def election_timeout(server, _term, _election) do
     |> State.new_voted_by()
     |> State.add_to_voted_by(server.selfP)
     |> Timer.cancel_all_append_entries_timers()
-    |> Debug.info("Starting an election!")
+    |> Debug.message("elec", "Starting an election!")
 
     # Timeout everyone else so they can vote for me
     Enum.each(server.servers, fn s ->
