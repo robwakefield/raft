@@ -70,14 +70,20 @@ defmodule Server do
           unless server.role == :LEADER do
             server
           else
+            if server.config.params_function == "split_vote" do
+              # Trigger synchronised heartbeat RPC for worst case scenario as per the paper
+              server |> ServerLib.send_heartbeat()
+            end
             crash_delay = server.config.crash_leaders_duration
             Debug.info(server, "I have CRASHED for #{crash_delay}ms!")
+            Debug.message(server, "time", "I have CRASHED for #{crash_delay}ms! @ #{:os.system_time(:millisecond)}")
             :timer.sleep(crash_delay)
             Debug.info(server, "I am back ONLINE!")
           end
 
         {:SERVER_CRASH, duration} ->
           Debug.info(server, "I have CRASHED for #{duration}ms!")
+          Debug.message(server, "time", "I have CRASHED for #{duration}ms! @ #{:os.system_time(:millisecond)}")
           :timer.sleep(duration)
           Debug.info(server, "I am back ONLINE!")
 

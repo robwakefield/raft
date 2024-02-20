@@ -5,8 +5,8 @@
 # coursework, raft 
 # Makefile, v1
 
-SERVERS   = 3    	# 3 or more
-CLIENTS   = 3   	  # 1 or more
+SERVERS   = 5      	# 3 or more
+CLIENTS   = 1   	  # 1 or more
 TIMELIMIT = 60000	  # milli-seconds(ms) to quit after
 PARAMS    = default	# e.g. default, slower, leader_crash, client_stop, server_crash, split_vote, long
 
@@ -18,6 +18,7 @@ DEBUG_LEVEL   = 1
 # hb: (+) for Heartbeat requests. (-) for Heartbeat replies
 # showlog: Show the current log for each server when a database error occurs
 # elec: Show starting elections
+# time: Show crashes and leader elections with millisecond time info
 
 #DEBUG_OPTIONS = "+areq -areq +arep -arep +vreq +vall -vreq +vrep -vrep +atim -atim +etim -etim +dreq -dreq +drep -drep -creq -crep"
 

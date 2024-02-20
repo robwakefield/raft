@@ -37,7 +37,6 @@ end
 def message(server, option, message, level \\ 1) do
   unless Debug.option?(server.config, option, level) do server else
     server = server |> Debug.inc_line_num()
-    #IO.puts "#{:os.system_time(:millisecond)} #{server_prefix(server)} #{option} #{inspect message}"
     IO.puts "#{server_prefix(server)} #{option} #{inspect message}"
     server
   end # unless

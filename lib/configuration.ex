@@ -136,10 +136,28 @@ end # params :server_crash
 
 # _________________________________________________________ params :split_vote
 def params :split_vote do
+  min_e = 150
+  max_e = 155
+
+  hb = floor(min_e / 2) # hb interval half of the minimum election timeout (see paper)
+
   Map.merge (params :default),
   %{
-    election_timeout_range:  150..150,
-    crash_leaders_after:     2000,
+    raft_timelimit:  120_000,
+    n_servers:       5,
+    n_clients:       1,
+
+    debug_options:           "time",
+    no_print:                true, # don't print monitor updates
+
+    append_entries_timeout:  hb,
+    election_timeout_range:  min_e..max_e,
+
+    crash_leaders_after:     500,
+    crash_leaders_repeat:    500,
+    crash_leaders_duration:  400,
+
+    client_timelimit:        10, # Immediately quit client to ignore prevLogIndex check
   }
 end # params :split_vote
 
@@ -147,9 +165,9 @@ end # params :split_vote
 def params :long do
   Map.merge (params :default),
   %{
-    raft_timelimit:  60_000,
-    client_timelimit:  60_000,
-    debug_options:   "",
+    raft_timelimit:          60_000,
+    client_timelimit:        60_000,
+    debug_options:           "",
 
     monitor_interval:        30_000,
     max_client_requests:     100_000,

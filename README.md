@@ -24,6 +24,8 @@ Choose multiple from the following:
 - `showlog`: Show the current log for each server when a database error occurs
 - `+/-hb`: (+) for Heartbeat requests. (-) for Heartbeat replies
 - `elec`: Show when servers start elections
+- `time`: Show crashes and leader elections with millisecond time info
+
 
 Other debug options inherited from the inital code are (Plus (+) for send/send_after. Minus (-) for receiver): 
 

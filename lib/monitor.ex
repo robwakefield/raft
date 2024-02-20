@@ -21,7 +21,11 @@ def moves(monitor, k, v)    do Map.put(monitor, :moves, Map.put(monitor.moves, k
 
 # _________________________________________________________ Monitor.start()
 def start(config) do
-  Process.send_after(self(), { :PRINT }, config.monitor_interval)
+  # CHANGES START
+  unless Map.get(config, :no_print) do
+    Process.send_after(self(), { :PRINT }, config.monitor_interval)
+  end
+  # CHANGES END
   monitor = %{
     config:    config,
     clock:     0,
