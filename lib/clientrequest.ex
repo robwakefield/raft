@@ -4,12 +4,11 @@
 
 defmodule ClientRequest do
 
-# TODO: use curr_election to drop old e_tim and votereps
-
 # Handle receieving a client request
 def handle_request(server, req) do
   unless server.role == :LEADER do
-    server |> forward(req)
+    send req.clientP, { :CLIENT_REPLY, %{cid: req.cid, reply: :NOT_LEADER, leaderP: server.leaderP} }
+    server
   else
     case req do
       %{cmd: _, clientP: _, cid: cid} ->
@@ -25,6 +24,8 @@ def handle_request(server, req) do
           fn q, server ->
             server |> AppendEntries.sendAppendEntries(q)
           end)
+          |> Monitor.send_msg({ :CLIENT_REQUEST, server.server_num })
+          |> Debug.received(":CLIENT_REQUEST #{inspect(req)}")
         end
 
       unexpected ->
