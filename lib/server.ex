@@ -74,6 +74,11 @@ defmodule Server do
             Debug.info(server, "I am back ONLINE!")
           end
 
+        {:SERVER_CRASH, duration} ->
+          Debug.info(server, "I have CRASHED for #{duration}ms!")
+          :timer.sleep(duration)
+          Debug.info(server, "I am back ONLINE!")
+
         {:SHOW_LOG, from} ->
           from = if from == 0 do
             Log.last_index(server) - 2

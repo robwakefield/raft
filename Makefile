@@ -6,7 +6,7 @@
 SERVERS   = 5    	# 3 or more
 CLIENTS   = 3   	  # 1 or more
 TIMELIMIT = 30000	  # milli-seconds(ms) to quit after
-PARAMS    = leader_crash	# e.g. default, slower, faster, etc
+PARAMS    = server_crash	# e.g. default, slower, faster, etc
 
 DEBUG_OPTIONS = "!inf"
 DEBUG_LEVEL   = 1

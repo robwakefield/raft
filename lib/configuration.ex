@@ -114,9 +114,10 @@ def params :server_crash do
       4 => 2000,
     },
     crash_durations: %{
-      3 => 1000,
+      3 => 2000,
       4 => 100_000,
     },
+    client_timelimit:        11_000, # limit client requests so we can show eventual convergence
   }
 end # params :server_crash
 

@@ -47,6 +47,11 @@ def start(config, :cluster_start) do
     Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
   end
 
+  Enum.each(config.crash_servers,
+  fn {n, delay} ->
+    Process.send_after(self(), { :SERVER_CRASH, n }, delay)
+  end)
+
   next(config, servers)
 
 end # start
@@ -63,6 +68,11 @@ defp next(config, servers) do
       unless Map.get(config, :crash_leaders_repeat) == nil do
         Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_repeat)
       end
+
+    {:SERVER_CRASH, n} ->
+      # Send a signal for the server to crash
+      duration = Map.get(config.crash_durations, n)
+      send Enum.at(servers, n - 1), {:SERVER_CRASH, duration}
 
     {:SHOW_LOG} ->
       # Send a signal to each server to print their log
