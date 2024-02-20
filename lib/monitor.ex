@@ -85,7 +85,7 @@ def next(monitor) do
     sorted = monitor.updates  |> Map.to_list |> List.keysort(0)
     IO.puts "  time = #{clock}      db updates done = #{inspect sorted}"
     sorted = monitor.balances  |> Map.to_list |> List.keysort(0)
-    IO.puts "  time = #{clock}      db balances = #{inspect sorted}"
+    IO.puts "  time = #{clock}          db balances = #{inspect sorted}"
 
     # if m.config.debug_level == 0 do
     #   min_done   = m.updates  |> Map.values |> Enum.min(fn -> 0 end)

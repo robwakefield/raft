@@ -28,7 +28,7 @@ def start(config, client_num, servers) do
     result:     nil,
   }
 
-  Process.send_after(self(), :CLIENT_TIMELIMIT, config.client_timelimit)
+  Process.send_after(self(), {:CLIENT_TIMELIMIT}, config.client_timelimit)
 
   Process.sleep(config.election_timeout_range.first)  # wait until first elections run
 

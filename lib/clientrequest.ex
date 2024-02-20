@@ -7,8 +7,8 @@ defmodule ClientRequest do
 # Handle receieving a client request
 def handle_request(server, req) do
   unless server.role == :LEADER do
-    send req.clientP, { :CLIENT_REPLY, %{cid: req.cid, reply: :NOT_LEADER, leaderP: server.leaderP} }
-    server
+    #send req.clientP, { :CLIENT_REPLY, %{cid: req.cid, reply: :NOT_LEADER, leaderP: server.leaderP} }
+    server |> forward(req)
   else
     case req do
       %{cmd: _, clientP: _, cid: cid} ->
