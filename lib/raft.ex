@@ -59,7 +59,10 @@ defp next(config, servers) do
       fn s ->
         send s, {:LEADER_CRASH}
       end)
-      Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_after)
+
+      unless Map.get(config, :crash_leaders_repeat) == nil do
+        Process.send_after(self(), { :LEADER_CRASH }, config.crash_leaders_repeat)
+      end
 
     {:SHOW_LOG} ->
       # Send a signal to each server to print their log

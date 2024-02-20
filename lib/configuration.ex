@@ -60,8 +60,14 @@ def params :default do
       # 3 => 5_000,
       # 4 => 8_000,
     },
+    crash_durations: %{		     # server_num => time until servers comes back online
+      # 3 => 5_000,
+      # 4 => 8_000,
+    },
 
     crash_leaders_after:      nil,    # nil or time after which leaders will crash
+    crash_leaders_repeat:      nil,
+    crash_leaders_duration:      nil,
 
   }
 end # params :default
@@ -83,7 +89,11 @@ end # params :slower
 def params :leader_crash do
   Map.merge (params :default),
   %{
-    crash_leaders_after:     1000,
+    crash_leaders_after:     1500,
+    crash_leaders_repeat:    nil,
+    crash_leaders_duration:  5000,
+
+    client_timelimit:        11_000, # limit client requests so we can show eventual convergence
   }
 end # params :slow
 
@@ -91,7 +101,7 @@ end # params :slow
 def params :client_stop do
   Map.merge (params :default),
   %{
-    max_client_requests:     1500,
+    max_client_requests:     1000,
   }
 end # params :client_stop
 
@@ -100,9 +110,13 @@ def params :server_crash do
   Map.merge (params :default),
   %{
     crash_servers: %{
-        3 => 5_000,
-        4 => 8_000,
-      },
+      3 => 1500,
+      4 => 2000,
+    },
+    crash_durations: %{
+      3 => 1000,
+      4 => 100_000,
+    },
   }
 end # params :server_crash
 
@@ -111,6 +125,7 @@ def params :split_vote do
   Map.merge (params :default),
   %{
     election_timeout_range:  150..150,
+    crash_leaders_after:     2000,
   }
 end # params :split_vote
 

@@ -3,18 +3,19 @@
 # coursework, raft 
 # Makefile, v1
 
-SERVERS   = 10    	# 3 or more
-CLIENTS   = 5    	  # 1 or more
-TIMELIMIT = 10000	  # milli-seconds(ms) to quit after
-PARAMS    = split_vote	# e.g. default, slower, faster, etc
+SERVERS   = 5    	# 3 or more
+CLIENTS   = 3   	  # 1 or more
+TIMELIMIT = 30000	  # milli-seconds(ms) to quit after
+PARAMS    = leader_crash	# e.g. default, slower, faster, etc
 
 DEBUG_OPTIONS = "!inf"
 DEBUG_LEVEL   = 1
 
-#DEBUG_OPTIONS = "!inf ?rec +log -log showlog +hb -hb"
+#DEBUG_OPTIONS = "!inf ?rec +log -log showlog +hb -hb elec"
 # log: (+) for Log additions. (-) for Log deletions
 # hb: (+) for Heartbeat requests. (-) for Heartbeat replies
 # showlog: Show the current log for each server when a database error occurs
+# elec: Show starting elections
 
 #DEBUG_OPTIONS = "+areq -areq +arep -arep +vreq +vall -vreq +vrep -vrep +atim -atim +etim -etim +dreq -dreq +drep -drep -creq -crep"
 

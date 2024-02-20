@@ -57,8 +57,6 @@ defmodule Server do
 
         {:CLIENT_REQUEST, body} ->
           server
-          |> Monitor.send_msg({ :CLIENT_REQUEST, server.server_num })
-          |> Debug.received(":CLIENT_REQUEST #{inspect(body)}")
           |> ClientRequest.handle_request(body)
 
         { :DB_REPLY, db_result } ->
@@ -70,7 +68,7 @@ defmodule Server do
           unless server.role == :LEADER do
             server
           else
-            crash_delay = 1500
+            crash_delay = server.config.crash_leaders_duration
             Debug.info(server, "I have CRASHED for #{crash_delay}ms!")
             :timer.sleep(crash_delay)
             Debug.info(server, "I am back ONLINE!")

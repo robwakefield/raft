@@ -1,0 +1,67 @@
+mix compile
+Compiling 1 file (.ex)
+-------------------------------------------------------------------
+server3-0001 role=LEADER    term=001 !inf "NEW LEADER - Server3"
+server4-0001 role=LEADER    term=003 !inf "NEW LEADER - Server4"
+
+  time = 1000 client requests seen = [{3, 3}, {4, 707}]
+  time = 1000      db updates done = [{1, 709}, {2, 709}, {3, 709}, {4, 710}, {5, 709}]
+  time = 1000          db balances = [{1, 576}, {2, 576}, {3, 576}, {4, -1452}, {5, 576}]
+
+server4-0002 role=LEADER    term=003 !inf "I have CRASHED for 5000ms!"
+server3-0002 role=LEADER    term=004 !inf "NEW LEADER - Server3"
+
+  time = 2000 client requests seen = [{3, 241}, {4, 1080}]
+  time = 2000      db updates done = [{1, 1320}, {2, 1320}, {3, 1320}, {4, 1083}, {5, 1320}]
+  time = 2000          db balances = [{1, -2667}, {2, -2667}, {3, -2667}, {4, -365}, {5, -2667}]
+
+  time = 3000 client requests seen = [{3, 873}, {4, 1080}]
+  time = 3000      db updates done = [{1, 1951}, {2, 1951}, {3, 1952}, {4, 1083}, {5, 1952}]
+  time = 3000          db balances = [{1, 2547}, {2, 2547}, {3, -2149}, {4, -365}, {5, -2149}]
+
+  time = 4000 client requests seen = [{3, 1371}, {4, 1080}]
+  time = 4000      db updates done = [{1, 2449}, {2, 2449}, {3, 2451}, {4, 1083}, {5, 2450}]
+  time = 4000          db balances = [{1, 827}, {2, 827}, {3, 1125}, {4, -365}, {5, 1790}]
+
+  time = 5000 client requests seen = [{3, 1838}, {4, 1080}]
+  time = 5000      db updates done = [{1, 2917}, {2, 2917}, {3, 2917}, {4, 1083}, {5, 2917}]
+  time = 5000          db balances = [{1, -4222}, {2, -4222}, {3, -4222}, {4, -365}, {5, -4222}]
+
+Node client1_35_rob@127.0.0.1 Going to Sleep - Client 1 all requests completed = 1500
+Node client2_35_rob@127.0.0.1 Going to Sleep - Client 2 all requests completed = 1500
+
+  time = 6000 client requests seen = [{3, 2004}, {4, 1080}]
+  time = 6000      db updates done = [{1, 3084}, {2, 3084}, {3, 3084}, {4, 1083}, {5, 3084}]
+  time = 6000          db balances = [{1, 5603}, {2, 5603}, {3, 5603}, {4, -365}, {5, 5603}]
+
+server4-0002 role=LEADER    term=003 !inf "I am back ONLINE!"
+
+  time = 7000 client requests seen = [{3, 2004}, {4, 1082}]
+  time = 7000      db updates done = [{1, 3084}, {2, 3084}, {3, 3084}, {4, 2671}, {5, 3084}]
+  time = 7000          db balances = [{1, 5603}, {2, 5603}, {3, 5603}, {4, 1255}, {5, 5603}]
+
+server5-0001 role=LEADER    term=007 !inf "NEW LEADER - Server5"
+
+  time = 8000 client requests seen = [{3, 2004}, {4, 1082}, {5, 254}]
+  time = 8000      db updates done = [{1, 3338}, {2, 3338}, {3, 3338}, {4, 3179}, {5, 3338}]
+  time = 8000          db balances = [{1, 6108}, {2, 6108}, {3, 6108}, {4, 4424}, {5, 6108}]
+
+server5-0002 role=LEADER    term=009 !inf "NEW LEADER - Server5"
+
+  time = 9000 client requests seen = [{3, 2004}, {4, 1082}, {5, 578}]
+  time = 9000      db updates done = [{1, 3661}, {2, 3661}, {3, 3661}, {4, 3661}, {5, 3662}]
+  time = 9000          db balances = [{1, 1461}, {2, 1461}, {3, 1461}, {4, 1461}, {5, -3775}]
+
+  time = 10000 client requests seen = [{3, 2004}, {4, 1082}, {5, 908}]
+  time = 10000      db updates done = [{1, 3991}, {2, 3991}, {3, 3991}, {4, 3991}, {5, 3992}]
+  time = 10000          db balances = [{1, -3614}, {2, -3614}, {3, -3614}, {4, -3614}, {5, -5456}]
+
+  time = 11000 client requests seen = [{3, 2004}, {4, 1082}, {5, 1239}]
+  time = 11000      db updates done = [{1, 4322}, {2, 4322}, {3, 4322}, {4, 4322}, {5, 4323}]
+  time = 11000          db balances = [{1, -525}, {2, -525}, {3, -525}, {4, -525}, {5, -2567}]
+
+Node client3_35_rob@127.0.0.1 Going to Sleep - Client 3 all requests completed = 1500
+
+  time = 12000 client requests seen = [{3, 2004}, {4, 1082}, {5, 1421}]
+  time = 12000      db updates done = [{1, 4505}, {2, 4505}, {3, 4505}, {4, 4505}, {5, 4505}]
+  time = 12000          db balances = [{1, 9519}, {2, 9519}, {3, 9519}, {4, 9519}, {5, 9519}]
