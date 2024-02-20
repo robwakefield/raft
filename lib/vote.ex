@@ -18,8 +18,8 @@ def election_timeout(server, term, _election) do
     |> Timer.cancel_all_append_entries_timers()
     |> Debug.message("elec", "Starting an election!")
 
-    # Timeout everyone else so they can vote for me
-    Enum.each(server.servers, fn s ->
+    # Timeout everyone else so I can send them a vote req
+    Enum.each(server.servers -- [server.selfP], fn s ->
       send self(), { :APPEND_ENTRIES_TIMEOUT, %{term: server.curr_term, followerP: s }}
     end)
 
@@ -44,7 +44,7 @@ def handle_request(server, term, q, lastLogIndex, lastLogTerm) do
   server = server |> ServerLib.stepdown_if_behind(term)
 
   if term == server.curr_term
-    and (server.voted_for == nil or server.voted_for == server.selfP)
+    and (server.voted_for == nil or server.voted_for == q)
     and (lastLogTerm > Log.last_term(server)
         or (lastLogTerm == Log.last_term(server)
             and lastLogIndex >= Log.last_index(server)))
@@ -71,7 +71,7 @@ def handle_reply(server, term, q, vote) do
 
     server = server |> Timer.cancel_append_entries_timer(q)
 
-    if State.vote_tally(server) > server.majority do
+    if State.vote_tally(server) >= server.majority do
       # (a) We win the election and become leader
       server
       |> State.role(:LEADER)
@@ -79,6 +79,7 @@ def handle_reply(server, term, q, vote) do
       |> State.init_next_index()
       |> State.init_match_index()
       |> Debug.info("NEW LEADER - #{server.config.node_name}")
+      |> Debug.message("time", "NEW LEADER - #{server.config.node_name}      @ #{:os.system_time(:millisecond)}")
       |> ServerLib.send_heartbeat()
     else
       server
