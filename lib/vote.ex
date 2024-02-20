@@ -5,8 +5,9 @@
 
 defmodule Vote do
 
-def election_timeout(server, term, _election) do
-  if term >= server.curr_term and (server.role == :FOLLOWER or server.role == :CANDIDATE) do
+def election_timeout(server, _term, _election) do
+  Debug.message(server, "elec", "etim!")
+  if server.role == :FOLLOWER or server.role == :CANDIDATE do
     # Start a new election
     server = server
     |> Timer.restart_election_timer()
