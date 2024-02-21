@@ -137,7 +137,7 @@ end # params :server_crash
 # _________________________________________________________ params :split_vote
 def params :split_vote do
   min_e = 150
-  max_e = 155
+  max_e = 150
 
   hb = floor(min_e / 2) # hb interval half of the minimum election timeout (see paper)
 
