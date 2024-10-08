@@ -1,5 +1,7 @@
 # Raft
 
+See the [project report](report.pdf) for information on the implementation and performance of the algorithm.
+
 ## Configuration
 
 In the [Makefile](./Makefile) there are a number of parameters that can be changed in order to simulate different system configurations.
